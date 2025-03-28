@@ -1,0 +1,375 @@
+cd to the backend
+run .....node server.js  
+The scrapper wil start running
+
+
+
+// module.exports = [
+//   {
+//     name: "BBC News",
+//     rssFeed: "https://feeds.bbci.co.uk/news/rss.xml",
+//     baseUrl: "https://www.bbc.co.uk",
+//     selectors: {
+//       content: [
+//         ".story-body__inner, .article-body",
+//         '[data-component="text-block"]',
+//       ], // Classes for article text
+//       title: ".story-body__h1, h1", // Title selector
+//       date: ".date, time", // Publication date
+//     },
+//   },
+//   {
+//     name: "The Standard",
+//     rssFeed: "https://www.standardmedia.co.ke/rss/headlines.php",
+//     baseUrl: "https://www.standardmedia.co.ke",
+//     selectors: {
+//       content: ".article-body", // Example; adjust based on inspection
+//       title: "h1",
+//       date: ".article-date",
+//     },
+//   },
+//     {
+//     name: "CNN Top Stories",
+//     rssFeed: "http://rss.cnn.com/rss/cnn_topstories.rss",
+//     baseUrl: "https://www.cnn.com",
+//     selectors: {
+//       content: ".article__content p",
+//       title: "h1.article__title",
+//       date: ".timestamp"
+//     }
+//   },
+//   {
+//     name: 'Standard - Main Headlines',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/headlines.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   {
+//     name: 'Standard - Kenya News',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/kenya.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   {
+//     name: 'Standard - World News',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/world.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   // Add all other feeds in the same format
+//   {
+//     name: 'Standard - Politics',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/politics.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   {
+//     name: 'Standard - Opinion',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/opinion.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   // ... Continue for all other feeds
+//   {
+//     name: 'Standard - Entertainment (SDE)',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/entertainment.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   }
+// ];
+
+// // Example usage (looping through feeds):
+// standardFeeds.forEach(feed => {
+//   console.log(`Crawling ${feed.name}...`);
+//   try {
+//     // Your crawling logic here (e.g., fetch RSS feed + parse)
+//     // Example pseudocode:
+//     // const articles = await fetchRSS(feed.rssFeed);
+//     // articles.forEach(article => {
+//     //   scrapeArticle(article.url, feed.selectors);
+//     // });
+//   } catch (err) {
+//     console.error(`Error processing ${feed.name}:`, err.message);
+//   }
+// },
+
+// ];
+
+//   // {
+//   //   name: "CNN",
+//   //   rssFeed: "https://rss.cnn.com/rss/edition.rss",
+//   //   baseUrl: "https://edition.cnn.com",
+//   //   selectors: {
+//   //     content: ".article__content, .zn-body__paragraph", // CNN article body
+//   //     title: "h1", // Title
+//   //     date: ".update-time, time", // Date
+//   //   },
+//   // },
+//   // Add more sources as needed
+
+
+
+
+Working crawlwer V1:
+
+module.exports = { crawlNews };
+
+// const puppeteer = require("puppeteer");
+// const RSSParser = require("rss-parser");
+// const Article = require("../models/article");
+// const sources = require("../config/sources");
+// const sentimentService = require("./sentiment");
+// const summarizerService = require("./summarizer");
+
+// const parser = new RSSParser();
+
+// // Date validation helper function
+// const getValidDate = (dateString) => {
+//   try {
+//     const parsedDate = new Date(dateString);
+//     return isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+//   } catch {
+//     return new Date();
+//   }
+// };
+
+// async function crawlNews() {
+//   const browser = await puppeteer.launch({ headless: true });
+
+//   try {
+//     for (const source of sources) {
+//       console.log(`Crawling ${source.name}...`);
+
+//       try {
+//         const feed = await parser.parseURL(source.rssFeed);
+
+//         for (const item of feed.items.slice(0, 5)) {
+//           const url = item.link;
+//           let page;
+
+//           try {
+//             const existingArticle = await Article.findOne({ url });
+//             if (existingArticle) continue;
+
+//             page = await browser.newPage();
+//             await page.goto(url, {
+//               waitUntil: "networkidle2",
+//               timeout: 60000,
+//             });
+
+//             const articleData = await page.evaluate((sel) => {
+//               const getText = (selector) => {
+//                 const el = document.querySelector(selector);
+//                 return el ? el.innerText.trim() : "";
+//               };
+
+//               return {
+//                 title: getText(sel.title),
+//                 text: Array.from(document.querySelectorAll(sel.content))
+//                   .map((el) => el.innerText.trim())
+//                   .filter((text) => text.length > 0)
+//                   .join("\n\n"),
+//                 date: getText(sel.date),
+//               };
+//             }, source.selectors);
+
+//             if (!articleData.text) {
+//               console.log(`Skipping empty article: ${url}`);
+//               continue;
+//             }
+
+//             const tonality = sentimentService.analyze(articleData.text);
+//             const summary = summarizerService.summarize(articleData.text);
+
+//             const article = new Article({
+//               url,
+//               title: articleData.title || item.title,
+//               text: articleData.text,
+//               summary,
+//               tonality,
+//               publicationDate: getValidDate(articleData.date || item.pubDate),
+//               source: source.name,
+//             });
+
+//             await article.save();
+//             console.log(`Saved article: ${article.title}`);
+//           } catch (error) {
+//             console.error(`Error processing ${url}:`, error.message);
+//           } finally {
+//             if (page && !page.isClosed()) {
+//               await page.close();
+//             }
+//           }
+//         }
+//       } catch (feedError) {
+//         console.error(
+//           `Error processing ${source.name} feed:`,
+//           feedError.message
+//         );
+//       }
+//     }
+//   } catch (error) {
+//     console.error("Global crawler error:", error);
+//   } finally {
+//     await browser.close();
+//   }
+// }
+
+// module.exports = { crawlNews };
+
+
+
+
+
+sourcesworking earlier:
+
+// module.exports = [
+//   {
+//     name: "BBC News",
+//     rssFeed: "https://feeds.bbci.co.uk/news/rss.xml",
+//     baseUrl: "https://www.bbc.co.uk",
+//     selectors: {
+//       content: [
+//         ".story-body__inner, .article-body",
+//         '[data-component="text-block"]',
+//       ], // Classes for article text
+//       title: ".story-body__h1, h1", // Title selector
+//       date: ".date, time", // Publication date
+//     },
+//   },
+//   {
+//     name: "The Standard",
+//     rssFeed: "https://www.standardmedia.co.ke/rss/headlines.php",
+//     baseUrl: "https://www.standardmedia.co.ke",
+//     selectors: {
+//       content: ".article-body", // Example; adjust based on inspection
+//       title: "h1",
+//       date: ".article-date",
+//     },
+//   },
+//     {
+//     name: "CNN Top Stories",
+//     rssFeed: "http://rss.cnn.com/rss/cnn_topstories.rss",
+//     baseUrl: "https://www.cnn.com",
+//     selectors: {
+//       content: ".article__content p",
+//       title: "h1.article__title",
+//       date: ".timestamp"
+//     }
+//   },
+//   {
+//     name: 'Standard - Main Headlines',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/headlines.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   {
+//     name: 'Standard - Kenya News',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/kenya.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   {
+//     name: 'Standard - World News',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/world.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   // Add all other feeds in the same format
+//   {
+//     name: 'Standard - Politics',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/politics.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   {
+//     name: 'Standard - Opinion',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/opinion.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   },
+//   // ... Continue for all other feeds
+//   {
+//     name: 'Standard - Entertainment (SDE)',
+//     rssFeed: 'https://www.standardmedia.co.ke/rss/entertainment.php',
+//     baseUrl: 'https://www.standardmedia.co.ke',
+//     selectors: {
+//       content: '.article-body',
+//       title: 'h1',
+//       date: '.article-date'
+//     }
+//   }
+// ];
+
+// // Example usage (looping through feeds):
+// standardFeeds.forEach(feed => {
+//   console.log(`Crawling ${feed.name}...`);
+//   try {
+//     // Your crawling logic here (e.g., fetch RSS feed + parse)
+//     // Example pseudocode:
+//     // const articles = await fetchRSS(feed.rssFeed);
+//     // articles.forEach(article => {
+//     //   scrapeArticle(article.url, feed.selectors);
+//     // });
+//   } catch (err) {
+//     console.error(`Error processing ${feed.name}:`, err.message);
+//   }
+// },
+
+// ];
+
+//   // {
+//   //   name: "CNN",
+//   //   rssFeed: "https://rss.cnn.com/rss/edition.rss",
+//   //   baseUrl: "https://edition.cnn.com",
+//   //   selectors: {
+//   //     content: ".article__content, .zn-body__paragraph", // CNN article body
+//   //     title: "h1", // Title
+//   //     date: ".update-time, time", // Date
+//   //   },
+//   // },
+//   // Add more sources as needed
