@@ -5,6 +5,8 @@ const Article = require("../models/article");
 const sources = require("../config/sources");
 const sentimentService = require("./sentiment");
 const summarizerService = require("./summarizer");
+const topicDetectionService = require("./topicDetection");
+const axios = require("axios");
 
 puppeteer.use(StealthPlugin());
 
@@ -187,4 +189,35 @@ async function crawlNews() {
   }
 }
 
-module.exports = { crawlNews };
+async function crawlArticle(url) {
+  try {
+    const response = await axios.get(url);
+    const articleData = {
+      url: url,
+      title: "Example Title", // Replace with actual title extraction logic
+      text: response.data, // Replace with actual text extraction logic
+    };
+
+    const summary = await summarizerService.summarize(articleData.text);
+    const tonality = await sentimentService.analyze(articleData.text);
+    const topics = await topicDetectionService.detectTopics(articleData.text);
+
+    console.log(`Crawled: ${url}`);
+    console.log(`Summary: ${summary}`);
+    console.log(`Tonality: ${tonality}`);
+    console.log(`Topics: ${topics.join(", ")}`);
+
+    return {
+      url: articleData.url,
+      title: articleData.title,
+      summary: summary,
+      tonality: tonality,
+      topics: topics,
+    };
+  } catch (error) {
+    console.error(`Error crawling ${url}:`, error);
+    return null;
+  }
+}
+
+module.exports = { crawlNews, crawlArticle };
