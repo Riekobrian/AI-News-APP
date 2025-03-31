@@ -5,6 +5,9 @@ const Article = require("../models/article");
 const sources = require("../config/sources");
 const sentimentService = require("./sentiment");
 const summarizerService = require("./summarizer");
+const topicDetectionService = require("./topicDetection");
+const axios = require("axios");
+const mongoose = require("mongoose");
 
 puppeteer.use(StealthPlugin());
 
@@ -88,6 +91,15 @@ async function extractPageContent(page, selectors) {
 }
 
 async function crawlNews() {
+  const dbState = mongoose.connection.readyState;
+  console.log(
+    `[Crawler] Starting crawlNews. MongoDB connection state: ${dbState} (1=connected)`
+  );
+  if (dbState !== 1) {
+    console.error("[Crawler] Error: MongoDB is not connected. Aborting crawl.");
+    return;
+  }
+
   const browser = await launchBrowser();
 
   try {
@@ -187,4 +199,35 @@ async function crawlNews() {
   }
 }
 
-module.exports = { crawlNews };
+async function crawlArticle(url) {
+  try {
+    const response = await axios.get(url);
+    const articleData = {
+      url: url,
+      title: "Example Title", // Replace with actual title extraction logic
+      text: response.data, // Replace with actual text extraction logic
+    };
+
+    const summary = await summarizerService.summarize(articleData.text);
+    const tonality = await sentimentService.analyze(articleData.text);
+    const topics = await topicDetectionService.detectTopics(articleData.text);
+
+    console.log(`Crawled: ${url}`);
+    console.log(`Summary: ${summary}`);
+    console.log(`Tonality: ${tonality}`);
+    console.log(`Topics: ${topics.join(", ")}`);
+
+    return {
+      url: articleData.url,
+      title: articleData.title,
+      summary: summary,
+      tonality: tonality,
+      topics: topics,
+    };
+  } catch (error) {
+    console.error(`Error crawling ${url}:`, error);
+    return null;
+  }
+}
+
+module.exports = { crawlNews, crawlArticle };
