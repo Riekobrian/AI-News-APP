@@ -1,23 +1,16 @@
+
 const { pipeline } = require("@huggingface/transformers");
 
-const sentimentPipeline = pipeline("sentiment-analysis", {
-  model: "distilbert-base-uncased-finetuned-sst-2-english", // Pre-trained sentiment model
-});
-
-app.post("/api/sentiment", async (req, res) => {
-  const { text } = req.body;
-
-  if (!text) {
-    return res
-      .status(400)
-      .json({ error: "Text is required for sentiment analysis" });
-  }
-
+async function summarize(text) {
   try {
-    const sentiment = await sentimentPipeline(text);
-    res.json({ sentiment: sentiment[0] });
+    const summarizer = await pipeline("summarization", {
+      model: "facebook/bart-large-cnn",
+      revision: "main",
+      cache_dir: path.join(__dirname, "hf_cache"), // Local cache
+    });
+    return await summarizer(text);
   } catch (error) {
-    console.error("Error during sentiment analysis:", error);
-    res.status(500).json({ error: "Failed to analyze sentiment" });
+    console.error("Summarization failed:", error);
+    return text.substring(0, 200) + "..."; // Fallback
   }
-});
+}

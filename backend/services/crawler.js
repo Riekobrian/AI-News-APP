@@ -7,6 +7,7 @@ const sentimentService = require("./sentiment");
 const summarizerService = require("./summarizer");
 const topicDetectionService = require("./topicDetection");
 const axios = require("axios");
+const mongoose = require("mongoose");
 
 puppeteer.use(StealthPlugin());
 
@@ -90,6 +91,15 @@ async function extractPageContent(page, selectors) {
 }
 
 async function crawlNews() {
+  const dbState = mongoose.connection.readyState;
+  console.log(
+    `[Crawler] Starting crawlNews. MongoDB connection state: ${dbState} (1=connected)`
+  );
+  if (dbState !== 1) {
+    console.error("[Crawler] Error: MongoDB is not connected. Aborting crawl.");
+    return;
+  }
+
   const browser = await launchBrowser();
 
   try {

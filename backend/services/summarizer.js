@@ -8,22 +8,16 @@
 // filepath: c:\Users\Ricky\Desktop\For Fun Projects\AINEWSAPP\backend\services\summarizer.js
 const { pipeline } = require("@huggingface/transformers");
 
-const summarizationPipeline = pipeline("summarization", {
-  model: "facebook/bart-large-cnn", // Pre-trained summarization model
-});
-
 async function summarize(text) {
   try {
-    const summary = await summarizationPipeline(text, {
-      max_length: 130,
-      min_length: 30,
-      do_sample: false,
+    const summarizer = await pipeline("summarization", {
+      model: "facebook/bart-large-cnn",
+      revision: "main",
+      cache_dir: path.join(__dirname, "hf_cache"), // Local cache
     });
-    return summary[0].summary_text;
+    return await summarizer(text);
   } catch (error) {
-    console.error("Error during summarization:", error);
-    return "Summary unavailable.";
+    console.error("Summarization failed:", error);
+    return text.substring(0, 200) + "..."; // Fallback
   }
 }
-
-module.exports = { summarize };
