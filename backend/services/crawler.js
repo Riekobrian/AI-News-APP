@@ -121,6 +121,25 @@ async function crawlNews() {
               continue;
             }
 
+            if (source.name.startsWith("Standard Digital")) {
+              console.log(
+                `[${source.name} RSS Item ${index + 1}] Keys:`,
+                Object.keys(item)
+              );
+              console.log(
+                `[${source.name} RSS Item ${index + 1}] Content Snippet:`,
+                item.contentSnippet?.substring(0, 100)
+              );
+              console.log(
+                `[${source.name} RSS Item ${index + 1}] Content:Encoded:`,
+                item["content:encoded"]?.substring(0, 200)
+              );
+              console.log(
+                `[${source.name} RSS Item ${index + 1}] Content:`,
+                item.content?.substring(0, 200)
+              );
+            }
+
             const existing = await Article.findOne({ url });
             if (existing) {
               console.log(`⏭️ Skipping existing: ${url}`);
